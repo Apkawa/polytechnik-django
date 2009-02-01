@@ -71,8 +71,7 @@ class Save_to_ods:
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthname))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthdesc))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthcell))
-        pass
-    def generate_ods(self):
+    def generate_ods(self, path="test"):
         head = (
                 ( u'OOO "Политехник"',),
                 ( u'тел:',''),
@@ -131,7 +130,7 @@ class Save_to_ods:
                 p = P(text=pl)
                 tc.addElement(p)
         self.doc.spreadsheet.addElement( self.table )
-        self.doc.save("test", True)
+        self.doc.save( path , True)
 
     '''
         for line in self.base:
@@ -144,17 +143,47 @@ class Save_to_ods:
                 tc.addElement(p)
     '''
 
-    def connect_base(self):
+    def connect_base(self, category_id = 202):
         self.base = []
-        self.category = Category.objects.get(id=202)
+        self.category = Category.objects.get(id= category_id )
         self.price = Price.objects.filter( category = self.category ).order_by( 'manufacturer', 'type_product', 'cell' )
+
+def generate_prices():
+    import os
+    root_dir = 'price'
+    root_c = Category.objects.filter( parent__id = None )
+    for r in root_c:
+        #print r.name,';', r.slug, ';', r.id
+        path = os.path.join( root_dir, r.name )
+        print path
+        try:
+            os.mkdir(path)
+        except:
+            pass
+        sub_c = Category.objects.filter( parent = r )
+        for s in sub_c:
+            s_path = os.path.join( root_dir, r.name, s.name )
+            _gt = Save_to_ods()
+            _gt.connect_base( category_id=s.id )
+            _gt.generate_ods( s_path )
+    _all = Category.objects.all()
+    for a in _all:
+        if a.id == a.parent_id:
+            s_path = os.path.join( root_dir, a.name )
+            _gt = Save_to_ods()
+            _gt.connect_base( category_id=a.id )
+            _gt.generate_ods( s_path )
+
+            #print a.name,';', a.slug, ';', a.id
+    pass
 
 ##########################################################################################################
 
 if __name__ == '__main__':
-    t = Save_to_ods()
-    t.connect_base()
-    t.generate_ods()
+    generate_prices()
+    #t = Save_to_ods()
+    #t.connect_base()
+    #t.generate_ods()
 
     pass
 '''
