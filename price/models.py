@@ -22,6 +22,7 @@ class Postavshik(models.Model):
     name = models.CharField( max_length = 222 )
     email = models.EmailField(blank=True)
     www = models.URLField(blank=True)
+    marketing_margin = models.FloatField('% наценки',blank=True, default = 0)
     def __unicode__(self):
         return  u'%s'%self.name
 
@@ -52,7 +53,7 @@ class Type( models.Model ):
 
 class Price( models.Model ):
     name = models.CharField( max_length = 222 )
-    desc = models.CharField( max_length = 600, blank = True )
+    desc = models.CharField( max_length = 2048, blank = True )
     cell = models.FloatField()
     valyuta = models.ForeignKey( 'Valyuta' )
     postavshik =  models.ForeignKey( 'Postavshik' , blank=True, null=True)

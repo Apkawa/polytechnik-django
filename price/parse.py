@@ -62,9 +62,9 @@ class Parse:
                 print l[2]
                 cell = float(re.sub(',','.', re.sub( '(%s|[\s]|\xc2\xa0)'%match ,'',l[2])))
                 manufac = Manufacturer.objects.get_or_create( name = l[3] )
-                if l[4] != 'NULL':
+                if l[4] and l[4] != 'NULL':
                     type_product = Type.objects.get_or_create( name = l[4] )
-                else:
+                elif not l[4] and l[4] == 'NULL':
                     type_product = ( None, )
                 category = Category.objects.get( id= int(l[5]))
                 try:
@@ -72,7 +72,7 @@ class Parse:
                 except IndexError:
                     img_url_flag = None
                 if img_url_flag:
-                    word =  name
+                    word =  manufacturer.name+name
                     img_url = self._find_in_google(word )
                 else:
                     img_url = None
