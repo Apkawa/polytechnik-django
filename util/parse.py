@@ -55,28 +55,29 @@ class Parse:
                 print 'not name'
                 continue
             desc = l[1]
-            match = '\$|€|руб\.|р\.|y\.e\.'
+            match = '\$|€|руб\.|р\.|y\.e\.|У\.Е\.'
             v = ''.join(re.findall('(%s)'%match,l[2]))
             _valyuta = Valyuta.objects.filter( desc = v )
             if _valyuta:
-                print l[2]
+                print l
                 cell = float(re.sub(',','.', re.sub( '(%s|[\s]|\xc2\xa0)'%match ,'',l[2])))
                 manufac = Manufacturer.objects.get_or_create( name = l[3] )
-                if l[4] != 'NULL':
+                if l[4] and l[4] != 'NULL':
                     type_product = Type.objects.get_or_create( name = l[4] )
-                else:
+                elif not l[4] and l[4] == 'NULL':
                     type_product = ( None, )
-                category = Category.objects.get( id= int(l[5]))
+                postavshik = Postavshik.objects.get( id = int(l[5]) )
+                category = Category.objects.get( id= int(l[6]))
                 try:
-                    img_url_flag = l[6]
+                    img_url_flag = l[7]
                 except IndexError:
                     img_url_flag = None
                 if img_url_flag:
-                    word =  name
+                    word =  manufac[0].name.encode('utf-8')+name
                     img_url = self._find_in_google(word )
                 else:
                     img_url = None
-                print name, desc, cell, _valyuta, manufac, category, img_url
+                print name, desc, cell, _valyuta, manufac[0], type_product, postavshik, category, img_url
                 #Price.objects.get_or_create(name = name, desc =desc, cell = cell, valyuta = _valyuta[0],\
                 #        manufacturer = manufac[0], img_url = img_url, category = category )
 
@@ -87,6 +88,7 @@ class Parse:
                             'manufacturer': manufac[0],
                             'type_product': type_product[0],
                             'img_url':img_url,
+                            'postavshik': postavshik,
                             'category': category,
                             })
             else:

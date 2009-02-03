@@ -3,9 +3,9 @@ from django.contrib import admin
 
 
 class PriceAdmin(admin.ModelAdmin):
-    list_display = ( 'preview_img_url','name', 'category', 'manufacturer')
+    list_display = ( 'preview_img_url','name','category', 'manufacturer', 'postavshik', 'e_cell')
     list_display_links = ( 'name', )
-    list_filter = ('manufacturer', 'category')
+    list_filter = ('postavshik','manufacturer', 'category')
 
     pass
 
@@ -32,6 +32,7 @@ admin.site.register( Category, CategoryAdmin)
 
 
 class PostavshikAdmin(admin.ModelAdmin):
+
     pass
 
 admin.site.register( Postavshik, PostavshikAdmin)

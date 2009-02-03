@@ -178,7 +178,11 @@ def save_ods_to_xls(path):
     pass
 
 def generate_all_prices():
-    root_dir = '/home/apkawa/work/2009/price'
+    root_dir = '/home/apkawa/work/2009/price/%s'%date
+    try:
+        os.mkdir( root_dir )
+    except:
+        pass
     root_c = Category.objects.filter( parent__id = None )
     for r in root_c:
         #print r.name,';', r.slug, ';', r.id

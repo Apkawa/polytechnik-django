@@ -44,9 +44,9 @@ class Category( models.Model ):
 
 class Type( models.Model ):
     name = models.CharField( max_length = 222 )
-    slug = models.CharField( max_length = 100 )
+    slug = models.CharField( max_length = 100, blank=True )
     parent = models.ForeignKey('self', blank=True,null=True)
-    desc = models.CharField( max_length = 500 )
+    desc = models.CharField( max_length = 500, blank=True )
     img_url = models.URLField(blank=True)
     def __unicode__(self):
         return  u'%s'%self.name
@@ -66,6 +66,9 @@ class Price( models.Model ):
     def preview_img_url(self):
         return '<img src="%s" alt="" width="100"/>'%self.thumb_img_url
     preview_img_url.allow_tags = True
+
+    def e_cell(self):
+        return '%.2f%s'%(self.cell, self.valyuta.desc)
 
     position = models.IntegerField( default=0, blank=True)
     def save(self,  force_insert=False, force_update=False ):
