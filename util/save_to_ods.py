@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from odf.opendocument import OpenDocumentSpreadsheet, load
-from odf.style import Style, TextProperties, TableCellProperties,TableRowProperties, ParagraphProperties
-from odf.style import TableColumnProperties
+from odf.style import Style
+from odf.style import PageLayout, PageLayoutProperties
+from odf.style import TextProperties,  ParagraphProperties
+from odf.style import TableColumnProperties,TableCellProperties,TableRowProperties
+
 from odf.text import P
-from odf.table import Table, TableColumn, TableRow, TableCell
+from odf.table import Table, TableColumn, TableRow, TableCell, CoveredTableCell
 
 import conn_site
 from polytechnik.price.models import Price, Valyuta, Postavshik, Manufacturer, Category, News, Pages, Type
@@ -23,13 +26,35 @@ class Save_to_ods:
         # later in the word processor.
         '''border-bottom="none" fo:border-left="none" fo:border-right="0.002cm solid #000000" fo:border-top="none"        '''
 
+        self.root_style = Style(name="root_style", family="table-cell")
+        self.root_style.addElement(
+                TableCellProperties(
+                    #borderbottom="none",
+                    #borderleft="none",
+                    #borderright="0.002cm solid #000000",
+                    #bordertop="none",
+                    #border="0.002cm solid #000000",
+                    wrapoption="wrap",
+                    verticalalign="middle",
+                    padding="0.049cm",
+                    ) )
+        self.root_style.addElement( TableRowProperties(breakbefore="auto", useoptimalrowheight="true",rowheight="3cm",  ) )
+        self.root_style.addElement(ParagraphProperties(numberlines="false", linenumber="0",))# marginleft="0.4cm"))
+        #self.tablecontents.addElement( TextProperties(hyphenate="true"))
+        self.doc.styles.addElement( self.root_style )
+
+        page = PageLayout( name="page" )
+        self.doc.automaticstyles.addElement( page )
+        page.addElement( PageLayoutProperties( margintop="0.499cm", marginbottom="0.499cm", marginleft="2cm", marginright="0.499cm", shadow="none", backgroundcolor="transparent", tablecentering="horizontal", writingmode="lr-tb") )
+
+
         self.head = Style(name="head", family="table-cell")
         self.head.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="14pt"))
         self.doc.styles.addElement(self.head)
 
         self.tablehead = Style(name="tablehead", family="table-cell")
         self.tablehead.addElement( TableCellProperties( border="0.004cm solid #000000", padding="0.199cm",  ) )
-        self.tablehead.addElement(ParagraphProperties(numberlines="false", linenumber="0", textalign="center"))
+        self.tablehead.addElement( ParagraphProperties(numberlines="false", linenumber="0", textalign="center"))
         self.tablehead.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="14pt"))
         self.doc.styles.addElement(self.tablehead)
 
@@ -43,27 +68,25 @@ class Save_to_ods:
                     border="0.002cm solid #000000",
                     wrapoption="wrap",
                     verticalalign="middle",
-                    paddingleft="0.1cm",
-                    paddingright="0.1cm",
-                    paddingtop="0.4cm",
-                    paddingbottom="0.4cm",
+                    #paddingleft="0.1cm",
+                    #paddingright="0.1cm",
+                    #paddingtop="0.4cm",
+                    #paddingbottom="0.4cm",
                     ) )
-        self.tablecontents.addElement( TableRowProperties(breakbefore="auto", useoptimalrowheight="true",rowheight="3cm",  ) )
-        self.tablecontents.addElement(ParagraphProperties(numberlines="false", linenumber="0",))# marginleft="0.4cm"))
-        #self.tablecontents.addElement( TextProperties(hyphenate="true"))
         self.doc.styles.addElement(self.tablecontents)
 
-        self.tablemanuf = Style(name="manuf", family="table-cell")
+ #       self.tablecontents_m2cell = Style(name = "content_m2cell", family="table-cell", parentstylename="content" )
+#        self.tablecontents_m2cell.addElement( TableCellProperties( t
+
+        self.tablemanuf = Style(name="manuf", family="table-cell", parentstylename="root_style")
         self.tablemanuf.addElement(
                 TableCellProperties(
                     borderbottom="0.004cm solid #000000",
                     borderleft="none", borderright="none",
                     bordertop="0.004cm solid #000000",
                     backgroundcolor="#CCCCCC",
-                    padding="0.4cm",
                     ) )
-        self.tablemanuf.addElement(ParagraphProperties(numberlines="false", linenumber="0", ))#marginleft="0.4cm"))
-        self.tablemanuf.addElement(ParagraphProperties(numberlines="false", linenumber="0", textalign="center"))
+        self.tablemanuf.addElement(ParagraphProperties( textalign="center" ))
         self.tablemanuf.addElement( TextProperties(fontweight="bold", fontweightasian="bold"))
         self.doc.styles.addElement(self.tablemanuf)
 
@@ -71,11 +94,11 @@ class Save_to_ods:
 # We want two different widths, one in inches, the other one in metric.
 # ODF Standard section 15.9.1
         widthname = Style(name="Wname", family="table-column")
-        widthname.addElement(TableColumnProperties(columnwidth="4.2 cm"))
+        widthname.addElement(TableColumnProperties(columnwidth="5 cm"))
         self.doc.automaticstyles.addElement(widthname )
 
         widthdesc = Style(name="Wdesc", family="table-column")
-        widthdesc.addElement(TableColumnProperties(columnwidth="10 cm",useoptimalcolumnwidth
+        widthdesc.addElement(TableColumnProperties(columnwidth="11 cm",useoptimalcolumnwidth
 ="1"))
         self.doc.automaticstyles.addElement( widthdesc )
 
@@ -89,6 +112,40 @@ class Save_to_ods:
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthname))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthdesc))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthcell))
+    def add_rows(self, _tuple, _style):
+        '''
+        _tuple example
+
+        (
+        ('','',), # 1 row
+        ('','','',), # 2 row
+        )
+        '''
+        for _r in _tuple:
+            tr = TableRow()
+            self.table.addElement(tr)
+            for _c in _r:
+                tc = TableCell( stylename= _style )
+                tr.addElement(tc)
+                p = P(text = _c )
+                tc.addElement(p)
+    def add_row( self, _tuple, _style):
+        tr = TableRow()
+        self.table.addElement(tr)
+        for _c in _tuple:
+            tc = TableCell( stylename= _style )
+            tr.addElement(tc)
+            p = P(text = _c )
+            tc.addElement(p)
+
+    def add_cell( self, _cell, _table_row, _style):
+        tc = TableCell( stylename= _style )
+        _table_row.addElement(tc)
+        p = P(text = _cell )
+        tc.addElement(p)
+
+
+
     def generate_ods(self, path="test"):
         head = (
                 ( '',u'OOO "Политехник"',),
@@ -100,64 +157,42 @@ class Save_to_ods:
                 ('',),
                 ( '',self.category.name, ),
                 )
-        for h in head:
-            tr = TableRow()
-            self.table.addElement(tr)
-            for r in h:
-                tc = TableCell( stylename= self.head )
-                tr.addElement(tc)
-                p = P(text = r )
-                tc.addElement(p)
-
-        for t_h in ( ( u'Наименование',u'Описание',u'Цена',), ):
-            tr = TableRow()
-            self.table.addElement(tr)
-            for r in t_h:
-                tc = TableCell( stylename = self.tablehead )
-                tr.addElement(tc)
-                p= P(text=r)
-                tc.addElement(p)
+        self.add_rows( head, self.head )
+        self.add_rows( ( ( u'Наименование',u'Описание',u'Цена',), ) , self.tablehead )
 
 
         manuf = None
         type_product = 13
         for p in self.price:
 
-            tr = TableRow( stylename = self.tablecontents )
-            self.table.addElement(tr)
             if manuf != p.manufacturer_id:
                 manuf = p.manufacturer.id
-                for m in  ( '',p.manufacturer.name,'' ):
-                    tc = TableCell( stylename= self.tablemanuf )
-                    tr.addElement(tc)
-                    _p = P(text=m)
-                    tc.addElement(_p)
-                tr = TableRow( stylename = self.tablecontents )
-                self.table.addElement(tr)
+                self.add_row( ( '',p.manufacturer.name,'' ) , self.tablemanuf )
 
             if type_product != p.type_product_id and p.type_product_id != 13:
                 type_product = p.type_product_id
-                for m in  ('', p.type_product.name, '' ):
-                    tc = TableCell( stylename= self.tablemanuf )
-                    tr.addElement(tc)
-                    _p = P(text=m)
-                    tc.addElement(_p)
+                self.add_row( ('', p.type_product.name, '' ) , self.tablemanuf )
+
+            p_desc = p.desc
+
+            if p_desc:
+                self.add_row( ( p.name, p_desc, ' %.0f %s'%(p.cell, p.valyuta.desc) ) , self.tablecontents )
+            else:
                 tr = TableRow( stylename = self.tablecontents )
                 self.table.addElement(tr)
+                p_price = ( p.name, ' %.0f %s'%(p.cell, p.valyuta.desc))
 
-            if p.desc:
-                p_price = ( p.name, p.desc, ' %.2f %s'%(p.cell, p.valyuta.desc))
-            else:
-                p_price = ( '',p.name, ' %.2f %s'%(p.cell, p.valyuta.desc))
-
-            for pl in p_price:
-                #if p.desc:
-                tc = TableCell( stylename= self.tablecontents)
-                #else:
-                #tc = TableCell( stylename= self.tablecontents, table={'numbercolumnsspanned':2, 'number-rows-spanned':1} )
+                #self.add_cell( pl, tr, self.tablecontents, )#numbercolumnsspanned=2, numberrowsspanned = 1 )
+                tc = TableCell( stylename= self.tablecontents, numbercolumnsspanned=2, numberrowsspanned = 1 )
                 tr.addElement(tc)
-                p = P(text=pl)
+                p = P(text=p_price[0])
                 tc.addElement(p)
+
+                tr.addElement( CoveredTableCell() )
+
+
+                self.add_cell( p_price[1], tr, self.tablecontents )
+
         self.doc.spreadsheet.addElement( self.table )
         self.doc.save( path , True)
 
