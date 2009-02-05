@@ -19,6 +19,8 @@ import os
 
 class Save_to_ods:
     def __init__(self):
+        pass
+    def make_style(self, tablename=date):
         #self.doc = load("themplate.ods")
 
         self.doc = OpenDocumentSpreadsheet()
@@ -108,11 +110,11 @@ class Save_to_ods:
         self.doc.automaticstyles.addElement(widthcell)
 
 # Start the table, and describe the columns
-        self.table = Table(name=date)
+        self.table = Table(name= tablename )
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthname))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthdesc))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthcell))
-    def add_rows(self, _tuple, _style):
+    def add_rows(self, _tuple, stylename):
         '''
         _tuple example
 
@@ -125,21 +127,21 @@ class Save_to_ods:
             tr = TableRow()
             self.table.addElement(tr)
             for _c in _r:
-                tc = TableCell( stylename= _style )
+                tc = TableCell( stylename= stylename )
                 tr.addElement(tc)
                 p = P(text = _c )
                 tc.addElement(p)
-    def add_row( self, _tuple, _style):
+    def add_row( self, _tuple, stylename):
         tr = TableRow()
         self.table.addElement(tr)
         for _c in _tuple:
-            tc = TableCell( stylename= _style )
+            tc = TableCell( stylename= stylename )
             tr.addElement(tc)
             p = P(text = _c )
             tc.addElement(p)
 
-    def add_cell( self, _cell, _table_row, _style):
-        tc = TableCell( stylename= _style )
+    def add_cell( self, _cell, _table_row, stylename):
+        tc = TableCell( stylename= stylename )
         _table_row.addElement(tc)
         p = P(text = _cell )
         tc.addElement(p)
@@ -147,18 +149,19 @@ class Save_to_ods:
 
 
     def generate_ods(self, path="test"):
+        self.make_style( tablename = self.category.name )
         head = (
                 ( '',u'OOO "Политехник"',),
-                ( u'phone:','+7 (812) 571-11-10'),
+                ( u'phone:','+7 (812) 312-42-38'),
+                ( u'','+7 (812) 970-42-93'),
                 ( u'email:','polytechnik@bk.ru'),
                 ( u'www:','http://polytechnik.ru'),
                 ('',),
-                ( '',u'Прайс от %s'%date,),
-                ('',),
-                ( '',self.category.name, ),
                 )
         self.add_rows( head, self.head )
-        self.add_rows( ( ( u'Наименование',u'Описание',u'Цена',), ) , self.tablehead )
+        self.add_row( ( u'Прайс от %s'%date,), self.root_style )
+        self.add_row( ( '',self.category.name, ), self.head )
+        self.add_row( ( u'Наименование',u'Описание',u'Цена',), self.tablehead )
 
 
         manuf = None

@@ -16,7 +16,7 @@ import time
 '''
 format delimiter=',' quotechar='"'
 
-name, desc, cell, manufacturer, category_id, img_url_flag ( 1 - find in google )
+name, desc, cell, manufacturer, postavshik_id, category_id, img_url_flag ( 1 - find in google )
 
 
 class Price( models.Model ):
@@ -61,9 +61,9 @@ class Parse:
             if _valyuta:
                 print l
                 cell = float(re.sub(',','.', re.sub( '(%s|[\s]|\xc2\xa0)'%match ,'',l[2])))
-                manufac = Manufacturer.objects.get_or_create( name = l[3] )
+                manufac = Manufacturer.objects.get_or_create( name = clear_space(l[3]) )
                 if l[4] and l[4] != 'NULL':
-                    type_product = Type.objects.get_or_create( name = l[4] )
+                    type_product = Type.objects.get_or_create( name = clear_space(l[4]) )
                 elif not l[4] and l[4] == 'NULL':
                     type_product = ( None, )
                 postavshik = Postavshik.objects.get( id = int(l[5]) )
@@ -82,7 +82,7 @@ class Parse:
                 #        manufacturer = manufac[0], img_url = img_url, category = category )
 
                 Price.objects.get_or_create(name = name,
-                        defaults={'desc':desc,
+                        defaults={'desc': clear_space(desc),
                             'cell':cell,
                             'valyuta' : _valyuta[0],
                             'manufacturer': manufac[0],
@@ -132,7 +132,7 @@ def google(word):
     #if type == 'images':
    #     return images(results)
 
-def tree_category(self):
+def tree_category():
     root_c = Category.objects.filter( parent__id = None )
     for r in root_c:
         print r.name,';', r.slug, ';', r.id
@@ -143,6 +143,13 @@ def tree_category(self):
     for a in _all:
         if a.id == a.parent_id:
             print a.name,';', a.slug, ';', a.id
+
+def clear_space(text):
+        cleared_t = re.sub( '(^\s|\s$)','',re.sub('[\s]{2,}',' ', p_a.name ))
+        if cleared_t:
+            return cleared_t
+        else:
+            return None
 
 
     pass

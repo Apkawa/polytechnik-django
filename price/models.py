@@ -46,14 +46,14 @@ class Type( models.Model ):
     name = models.CharField( max_length = 222 )
     slug = models.CharField( max_length = 100, blank=True )
     parent = models.ForeignKey('self', blank=True,null=True)
-    desc = models.CharField( max_length = 500, blank=True )
+    desc = models.TextField( max_length = 500, blank=True )
     img_url = models.URLField(blank=True)
     def __unicode__(self):
         return  u'%s'%self.name
 
 class Price( models.Model ):
     name = models.CharField( max_length = 222 )
-    desc = models.CharField( max_length = 2048, blank = True )
+    desc = models.TextField( max_length = 2048, blank = True )
     cell = models.FloatField()
     valyuta = models.ForeignKey( 'Valyuta' )
     postavshik =  models.ForeignKey( 'Postavshik' , blank=True, null=True)
