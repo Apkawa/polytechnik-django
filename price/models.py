@@ -30,6 +30,7 @@ class Manufacturer( models.Model):
     name = models.CharField( max_length = 222 )
     www = models.URLField(blank=True)
     img_url = models.URLField(blank=True)
+    pos = models.IntegerField( blank=True, null=True)
     def __unicode__(self):
         return  u'%s'%self.name
 
@@ -39,6 +40,8 @@ class Category( models.Model ):
     parent = models.ForeignKey('self', blank=True,null=True)
     desc = models.TextField( max_length = 2048, blank= True )
     img_url = models.URLField(blank=True)
+    old_db = models.BooleanField( default=False, )
+#    page_mode = models.BooleanField( default=False, blank=True )
     def __unicode__(self):
         return  u'%s'%self.name
 
@@ -48,11 +51,12 @@ class Type( models.Model ):
     parent = models.ForeignKey('self', blank=True,null=True)
     desc = models.TextField( max_length = 500, blank=True )
     img_url = models.URLField(blank=True)
+    pos = models.IntegerField( blank=True, null=True)
     def __unicode__(self):
         return  u'%s'%self.name
 
 class Price( models.Model ):
-    name = models.CharField( max_length = 222 )
+    name = models.TextField( max_length = 1024 )
     desc = models.TextField( max_length = 2048, blank = True )
     cell = models.FloatField()
     valyuta = models.ForeignKey( 'Valyuta' )
@@ -70,7 +74,6 @@ class Price( models.Model ):
     def e_cell(self):
         return '%.2f%s'%(self.cell, self.valyuta.desc)
 
-    position = models.IntegerField( default=0, blank=True)
     def save(self,  force_insert=False, force_update=False ):
         if self.img_url:
             upl_url = upload_img( self.img_url )
@@ -97,7 +100,8 @@ class Valyuta( models.Model ):
 class News( models.Model ):
     head = models.CharField( max_length = 222 )
     body = models.TextField( max_length = 1024 )
-    date = models.DateField( auto_now_add  = True )
+    date = models.DateField( )
+    hide = models.BooleanField( default = False)
     def __unicode__(self):
         return  u'%s'%self.head
 

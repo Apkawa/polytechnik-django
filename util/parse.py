@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 import os, sys
 sys.path.append('/home/apkawa/Code/work')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'polytechnik.settings'
+remote = True
 from django.core.management import setup_environ
-from polytechnik import settings
+if remote:
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'polytechnik.settings_remote'
+    from polytechnik import settings_remote
+    setup_environ( settings_remote)
+else:
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'polytechnik.settings'
+    from polytechnik import settings
+    setup_environ(settings)
 
-setup_environ(settings)
 
 
 from polytechnik.price.models import Price, Valyuta, Postavshik, Manufacturer, Category, News, Pages, Type
@@ -17,6 +23,9 @@ import time
 format delimiter=',' quotechar='"'
 
 name, desc, cell, manufacturer, postavshik_id, category_id, img_url_flag ( 1 - find in google )
+
+0	     1	    2	    3	    4	        5	        6	    7	        8
+name_pr	desc	cell	manuf	pos	type_product	pos_t	category_id	    img_flag
 
 
 class Price( models.Model ):
@@ -33,7 +42,8 @@ class Price( models.Model ):
 
 '''
 class Parse:
-    def __init__(self):
+    def __init__(self, test = False):
+        self.test = test
         pass
     def _find_in_google(self, query):
         query = query
@@ -47,50 +57,64 @@ class Parse:
         self.loaded = [l for l in c]
         self._parse()
     def _parse( self ):
-        print '_parse'
         for l in self.loaded:
             #time.sleep(1)
-            name = l[0]
+            name = clear_space( l[0])
             if not name:
-                print 'not name'
                 continue
-            desc = l[1]
+            desc = clear_space( l[1])
             match = '\$|€|руб\.|р\.|y\.e\.|У\.Е\.'
             v = ''.join(re.findall('(%s)'%match,l[2]))
             _valyuta = Valyuta.objects.filter( desc = v )
             if _valyuta:
                 print l
                 cell = float(re.sub(',','.', re.sub( '(%s|[\s]|\xc2\xa0)'%match ,'',l[2])))
-                manufac = Manufacturer.objects.get_or_create( name = clear_space(l[3]) )
-                if l[4] and l[4] != 'NULL':
-                    type_product = Type.objects.get_or_create( name = clear_space(l[4]) )
-                elif not l[4] and l[4] == 'NULL':
-                    type_product = ( None, )
-                postavshik = Postavshik.objects.get( id = int(l[5]) )
-                category = Category.objects.get( id= int(l[6]))
+                l_3 = clear_space(l[3])
+                if l_3:
+                    _m = Manufacturer.objects.get_or_create( name = l_3 , defaults={'pos': int(l[4]) if l[4] else 0} )
+                    manufac  = _m[0]
+                    if not _m[1]:
+                        manufac.pos =int(l[4]) if l[4] else 0
+                        manufac.save()
+
+                else:
+                    manufac = Manufacturer.objects.get( id = 233 )
+
+                l_5 = clear_space(l[5])
+                if l_5:
+
+                    _t = Type.objects.get_or_create( name = l_5, defaults={'pos':int(l[6])if l[6] else 0} )
+                    type_product = _t[0]
+                    if not _t[1]:
+                        type_product.pos = int(l[6])if l[6] else 0
+                        type_product.save()
+
+                else:
+                    type_product = Type.objects.get( id = 13 )
+                postavshik = None #Postavshik.objects.get( id = int(l[5]) ) if l[5] else None
+                category = Category.objects.get( id= int(l[7]))
                 try:
-                    img_url_flag = l[7]
+                    img_url_flag = l[8]
                 except IndexError:
                     img_url_flag = None
-                if img_url_flag:
+                if re.match('http://',img_url_flag):
+                    img_url = img_url_flag
+                elif img_url_flag:
                     word =  manufac[0].name.encode('utf-8')+name
                     img_url = self._find_in_google(word )
                 else:
                     img_url = None
-                print name, desc, cell, _valyuta, manufac[0], type_product, postavshik, category, img_url
-                #Price.objects.get_or_create(name = name, desc =desc, cell = cell, valyuta = _valyuta[0],\
-                #        manufacturer = manufac[0], img_url = img_url, category = category )
-
-                Price.objects.get_or_create(name = name,
-                        defaults={'desc': clear_space(desc),
+                print name, desc, cell, _valyuta, category, img_url
+                p = Price.objects.get_or_create(name = name, category = category,
+                        defaults={'desc': desc,
                             'cell':cell,
                             'valyuta' : _valyuta[0],
-                            'manufacturer': manufac[0],
-                            'type_product': type_product[0],
+                            'manufacturer': manufac,
+                            'type_product': type_product,
                             'img_url':img_url,
                             'postavshik': postavshik,
-                            'category': category,
                             })
+                print p
             else:
                 continue
     def insert_db(self):
@@ -135,30 +159,25 @@ def google(word):
 def tree_category():
     root_c = Category.objects.filter( parent__id = None )
     for r in root_c:
-        print r.name,';', r.slug, ';', r.id
+        print r.id,';',r.name,';', r.slug, ';',r.price_set.all().count()
         sub_c = Category.objects.filter( parent = r )
         for s in sub_c:
-            print '---->',s.name,';', s.slug, ';', s.id
+            print s.id, ';','    ',s.name,';', s.slug, ';', s.price_set.all().count()
     _all = Category.objects.all()
     for a in _all:
         if a.id == a.parent_id:
-            print a.name,';', a.slug, ';', a.id
+            print a.id, ';',a.name,';', a.slug,';',a.price_set.all().count()
 
 def clear_space(text):
-        cleared_t = re.sub( '(^\s|\s$)','',re.sub('[\s]{2,}',' ', p_a.name ))
+        cleared_t = re.sub( '(^\s|\s$)','',re.sub('[\s]{2,}',' ', text ))
         if cleared_t:
             return cleared_t
         else:
             return None
 
 
-    pass
 if __name__ == '__main__':
     import sys
     #print google( sys.argv[1] )
-    print 'nya'
     p = Parse().load_file( sys.argv[1:])
-    '''
-    '€ 1 154,00'
-    "$2 365,00"
-    '''
+    #tree_category()

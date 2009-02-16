@@ -25,7 +25,7 @@ admin.site.register( Manufacturer, ManufacturerAdmin)
 
 
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ( 'name', 'slug', 'parent','id')
+    list_display = ( 'id','name', 'slug', 'parent')
     pass
 
 admin.site.register( Category, CategoryAdmin)
@@ -39,7 +39,7 @@ admin.site.register( Postavshik, PostavshikAdmin)
 
 
 class NewsAdmin(admin.ModelAdmin):
-    list_display = ('head','date')
+    list_display = ('head','date', 'hide')
     pass
 
 admin.site.register( News, NewsAdmin)

@@ -16,6 +16,7 @@ date = datetime.datetime.now().date().strftime('%F')
 
 
 import os
+import re
 
 class Save_to_ods:
     def __init__(self):
@@ -148,7 +149,7 @@ class Save_to_ods:
 
 
 
-    def generate_ods(self, path="test"):
+    def generate_ods(self, path="/home/apkawa/work/test_desu"):
         self.make_style( tablename = self.category.name )
         head = (
                 ( '',u'OOO "Политехник"',),
@@ -168,7 +169,7 @@ class Save_to_ods:
         type_product = 13
         for p in self.price:
 
-            if manuf != p.manufacturer_id:
+            if manuf != p.manufacturer_id and p.manufacturer_id != 233:
                 manuf = p.manufacturer.id
                 self.add_row( ( '',p.manufacturer.name,'' ) , self.tablemanuf )
 
@@ -199,10 +200,17 @@ class Save_to_ods:
         self.doc.spreadsheet.addElement( self.table )
         self.doc.save( path , True)
 
-    def connect_base(self, category_id = 202):
+    def connect_base(self, category_id = 202, manufac_name = False):
         self.base = []
         self.category = Category.objects.get(id= category_id )
-        self.price = Price.objects.filter( category = self.category ).order_by( 'manufacturer', 'type_product', 'cell' )
+        if manufac_name:
+            self.price = Price.objects.filter(
+                    category = self.category, manufacturer__name = manufac_name ).order_by(
+                            '-manufacturer__pos','manufacturer', '-type_product__pos','type_product','id' )
+        else:
+            self.price = Price.objects.filter( category = self.category ).order_by( 'manufacturer__pos','manufacturer',
+                 '-type_product__pos','type_product','id' )
+
         if not self.price.count():
             return False
         else:
@@ -215,7 +223,8 @@ def save_ods_to_xls(path):
     print "Save As XLS file: %s.ods"%path
     pass
 
-def generate_all_prices():
+
+def generate_all_prices(manuf_flag = False):
     root_dir = '/home/apkawa/work/2009/price/%s'%date
     try:
         os.mkdir( root_dir )
@@ -226,24 +235,42 @@ def generate_all_prices():
         #print r.name,';', r.slug, ';', r.id
         sub_c = Category.objects.filter( parent = r )
         for s in sub_c:
-            s_path = os.path.join( root_dir, r.name, s.name )
             _gt = Save_to_ods()
-            if _gt.connect_base( category_id=s.id ):
-                path = os.path.join( root_dir, r.name )
-                try:
-                    os.mkdir(path)
-                except:
-                    pass
-                _gt.generate_ods( s_path )
-                save_ods_to_xls( s_path )
+            if manuf_flag:
+                manufs = set(Manufacturer.objects.filter( price__category__id = s.id))
+            else:
+                manufs = ( False,)
+            for m in manufs:
+                s_path = os.path.join( root_dir,r.name if manuf_flag else '', s.name if manuf_flag else r.name, re.sub('(\"|\'|\(|\))','',m.name) if manuf_flag else s.name )
+                print s_path
+                if _gt.connect_base( category_id=s.id, manufac_name = m ):
+                    path = os.path.join( root_dir,r.name if manuf_flag else '' , s.name if manuf_flag else r.name )
+                    try:
+                        os.makedirs(path)
+                    except:
+                        pass
+                    _gt.generate_ods( s_path )
+                    save_ods_to_xls( s_path )
     _all = Category.objects.all()
     for a in _all:
         if a.id == a.parent_id:
-            s_path = os.path.join( root_dir, a.name )
+            if manuf_flag:
+                manufs = set(Manufacturer.objects.filter( price__category__id = a.id))
+            else:
+                manufs = ( False,)
+
             _gt = Save_to_ods()
-            if _gt.connect_base( category_id=a.id ):
-                _gt.generate_ods( s_path )
-                save_ods_to_xls( s_path )
+            for m in manufs:
+                s_path = os.path.join( root_dir, a.name if manuf_flag else '' , re.sub('(\"|\'|\(|\))','',m.name) if manuf_flag else a.name )
+                print s_path
+                try:
+                    os.makedirs(s_path)
+                except:
+                    pass
+
+                if _gt.connect_base( category_id=a.id, manufac_name= m ):
+                    _gt.generate_ods( s_path )
+                    save_ods_to_xls( s_path )
 
             #print a.name,';', a.slug, ';', a.id
     pass
@@ -254,60 +281,12 @@ if __name__ == '__main__':
     from sys import argv
     if argv[1] in ('--all', '-a'):
         generate_all_prices()
+    if argv[1] in ('--all_m', '-am'):
+        generate_all_prices( True )
     elif argv[1] == '--id':
         t = Save_to_ods()
         t.connect_base( argv[2] )
         t.generate_ods()
 
     pass
-'''
-def read_base():
-    category = Category.objects.get(id=199)
-    print category.name
-    price = Price.objects.filter( category = category ).order_by( 'manufacturer', 'cell' )
-    manuf = None
-    for p in price:
-        if manuf != p.manufacturer.id:
-            manuf = p.manufacturer.id
-            print p.manufacturer.name
-        print '%s %s %f %s'%(p.name, p.desc, p.cell,p.valyuta.desc)
-
-def generate_ods():
-    doc = OpenDocumentSpreadsheet()
-# Create a style for the table content. One we can modify
-# later in the word processor.
-    tablecontents = Style(name="Table Contents", family="paragraph")
-    tablecontents.addElement(ParagraphProperties(numberlines="false", linenumber="0"))
-    doc.styles.addElement(tablecontents)
-
-# Create automatic styles for the column widths.
-# We want two different widths, one in inches, the other one in metric.
-# ODF Standard section 15.9.1
-    widthdesc = Style(name="Wshort", family="table-column")
-    widthdesc.addElement(TableColumnProperties(columnwidth="20 cm"))
-    doc.automaticstyles.addElement(widthdesc)
-
-    widthcell = Style(name="Wwide", family="table-column")
-    widthcell.addElement(TableColumnProperties(columnwidth="1.5in"))
-    doc.automaticstyles.addElement(widthcell)
-
-# Start the table, and describe the columns
-    table = Table(name="Password")
-    #table.addElement(TableColumn(numbercolumnsrepeated=4,stylename=widthshort))
-    table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthcell))
-
-    f = open('/etc/passwd')
-    for line in f:
-        rec = line.strip().split(":")
-        tr = TableRow()
-        table.addElement(tr)
-        for val in rec:
-            tc = TableCell()
-            tr.addElement(tc)
-            p = P(stylename=tablecontents,text=val)
-            tc.addElement(p)
-
-    doc.spreadsheet.addElement(table)
-    doc.save("passwd", True)
-'''
 
