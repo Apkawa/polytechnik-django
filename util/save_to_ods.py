@@ -6,6 +6,8 @@ from odf.style import PageLayout, PageLayoutProperties
 from odf.style import TextProperties,  ParagraphProperties
 from odf.style import TableColumnProperties,TableCellProperties,TableRowProperties
 
+from odf.style import FontFace
+
 from odf.text import P
 from odf.table import Table, TableColumn, TableRow, TableCell, CoveredTableCell
 
@@ -27,23 +29,19 @@ class Save_to_ods:
         self.doc = OpenDocumentSpreadsheet()
         # Create a style for the table content. One we can modify
         # later in the word processor.
-        '''border-bottom="none" fo:border-left="none" fo:border-right="0.002cm solid #000000" fo:border-top="none"        '''
+        self.font = FontFace( name="Times New Roman", fontadornments="Normal", fontfamilygeneric="roman", fontpitch="variable" )
+        self.doc.fontfacedecls.addElement( self.font )
 
-        self.root_style = Style(name="root_style", family="table-cell")
+        self.root_style = Style(name="rootstyle", family="table-cell")
         self.root_style.addElement(
                 TableCellProperties(
-                    #borderbottom="none",
-                    #borderleft="none",
-                    #borderright="0.002cm solid #000000",
-                    #bordertop="none",
-                    #border="0.002cm solid #000000",
                     wrapoption="wrap",
                     verticalalign="middle",
                     padding="0.049cm",
                     ) )
-        self.root_style.addElement( TableRowProperties(breakbefore="auto", useoptimalrowheight="true",rowheight="3cm",  ) )
-        self.root_style.addElement(ParagraphProperties(numberlines="false", linenumber="0",))# marginleft="0.4cm"))
-        #self.tablecontents.addElement( TextProperties(hyphenate="true"))
+        #self.root_style.addElement( TableRowProperties(breakbefore="auto", useoptimalrowheight="true",rowheight="3cm",  ) )
+        #self.root_style.addElement(ParagraphProperties(numberlines="false", linenumber="0",))# marginleft="0.4cm"))
+        self.root_style.addElement( TextProperties( fontname="Times New Roman", fontnameasian="Times New Roman", fontsize="10pt"))
         self.doc.styles.addElement( self.root_style )
 
         page = PageLayout( name="page" )
@@ -51,46 +49,34 @@ class Save_to_ods:
         page.addElement( PageLayoutProperties( margintop="0.499cm", marginbottom="0.499cm", marginleft="2cm", marginright="0.499cm", shadow="none", backgroundcolor="transparent", tablecentering="horizontal", writingmode="lr-tb") )
 
 
-        self.head = Style(name="head", family="table-cell")
-        self.head.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="14pt"))
+        self.head = Style(name="head", family="table-cell", parentstylename="rootstyle")
+        self.head.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="12pt"))
         self.doc.styles.addElement(self.head)
 
-        self.tablehead = Style(name="tablehead", family="table-cell")
-        self.tablehead.addElement( TableCellProperties( border="0.004cm solid #000000", padding="0.199cm",  ) )
+        self.tablehead = Style(name="tablehead", family="table-cell", parentstylename="rootstyle")
         self.tablehead.addElement( ParagraphProperties(numberlines="false", linenumber="0", textalign="center"))
-        self.tablehead.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="14pt"))
+        self.tablehead.addElement( TableCellProperties( border="0.004cm solid #000000", padding="0.199cm",  ) )
+        self.tablehead.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="12pt"))
         self.doc.styles.addElement(self.tablehead)
 
-        self.tablecontents = Style(name="content", family="table-cell")
+        self.tablecontents = Style(name="content", family="table-cell", parentstylename="rootstyle")
         self.tablecontents.addElement(
                 TableCellProperties(
-                    #borderbottom="none",
-                    #borderleft="none",
-                    #borderright="0.002cm solid #000000",
-                    #bordertop="none",
-                    border="0.002cm solid #000000",
+                    border="0.004cm solid #000000",
                     wrapoption="wrap",
                     verticalalign="middle",
-                    #paddingleft="0.1cm",
-                    #paddingright="0.1cm",
-                    #paddingtop="0.4cm",
-                    #paddingbottom="0.4cm",
                     ) )
         self.doc.styles.addElement(self.tablecontents)
 
-         #self.tablecontents_m2cell = Style(name = "content_m2cell", family="table-cell", parentstylename="content" )
-         #self.tablecontents_m2cell.addElement( TableCellProperties( t
 
-        self.tablemanuf = Style(name="manuf", family="table-cell", parentstylename="root_style")
+        self.tablemanuf = Style(name="manuf", family="table-cell", parentstylename="rootstyle")
         self.tablemanuf.addElement(
                 TableCellProperties(
-                    borderbottom="0.004cm solid #000000",
-                    borderleft="none", borderright="none",
-                    bordertop="0.004cm solid #000000",
+                    border="0.013cm solid #000000",
                     backgroundcolor="#CCCCCC",
                     ) )
         self.tablemanuf.addElement(ParagraphProperties( textalign="center" ))
-        self.tablemanuf.addElement( TextProperties(fontweight="bold", fontweightasian="bold"))
+        self.tablemanuf.addElement( TextProperties(fontweight="bold", fontweightasian="bold", fontsize="14pt" ))
         self.doc.styles.addElement(self.tablemanuf)
         # Create automatic styles for the column widths.
         # We want two different widths, one in inches, the other one in metric.
@@ -101,7 +87,7 @@ class Save_to_ods:
 
         widthdesc = Style(name="Wdesc", family="table-column")
         widthdesc.addElement(TableColumnProperties(columnwidth="11 cm",useoptimalcolumnwidth
-="1"))
+        ="1"))
         self.doc.automaticstyles.addElement( widthdesc )
 
         widthcell = Style(name="Wcell", family="table-column")
@@ -131,6 +117,19 @@ class Save_to_ods:
                 tr.addElement(tc)
                 p = P(text = _c )
                 tc.addElement(p)
+    def add_spanned_row( self, _tuple, stylename, _count_col_spanned = 3):
+        tr = TableRow()
+        self.table.addElement(tr)
+        for _c in _tuple:
+            tc = TableCell( stylename= stylename )
+            tc = TableCell( stylename= stylename, numbercolumnsspanned= _count_col_spanned, numberrowsspanned = 1 )
+            tr.addElement(tc)
+            p = P(text = _c )
+            tc.addElement(p)
+            tr.addElement( CoveredTableCell() )
+    
+
+
     def add_row( self, _tuple, stylename):
         tr = TableRow()
         self.table.addElement(tr)
@@ -150,8 +149,9 @@ class Save_to_ods:
 
     def generate_ods(self, path="/home/apkawa/work/test_desu"):
         self.make_style( tablename = self.category.name )
+
+        self.add_spanned_row( (u'OOO "Политехник"',), self.head )
         head = (
-                ( '',u'OOO "Политехник"',),
                 ( u'phone:','+7 (812) 312-42-38'),
                 ( u'','+7 (812) 970-42-93'),
                 ( u'email:','polytechnik@bk.ru'),
@@ -160,7 +160,8 @@ class Save_to_ods:
                 )
         self.add_rows( head, self.head )
         self.add_row( ( u'Прайс от %s'%date,), self.root_style )
-        self.add_row( ( '',self.category.name, ), self.head )
+        self.add_spanned_row( (self.category.name, ), self.tablemanuf )
+        
         self.add_row( ( u'Наименование',u'Описание',u'Цена',), self.tablehead )
 
 
@@ -170,20 +171,24 @@ class Save_to_ods:
 
             if manuf != p.manufacturer_id and p.manufacturer_id != 233:
                 manuf = p.manufacturer.id
-                self.add_row( ( '',p.manufacturer.name,'' ) , self.tablemanuf )
+                self.add_spanned_row( (p.manufacturer.name,) , self.tablemanuf )
 
             if type_product != p.type_product_id and p.type_product_id != 13:
                 type_product = p.type_product_id
-                self.add_row( ('', p.type_product.name, '' ) , self.tablemanuf )
+                self.add_spanned_row( ( p.type_product.name,) , self.tablemanuf )
 
             p_desc = p.desc
+            p_cell = ' %.0f %s'%(p.cell, p.valyuta.desc) if p.cell else ' -'
 
             if p_desc:
-                self.add_row( ( p.name, p_desc, ' %.0f %s'%(p.cell, p.valyuta.desc) ) , self.tablecontents )
+                self.add_row( ( p.name, p_desc, p_cell  ) , self.tablecontents )
+            elif not p.desc and not p.cell:
+                p_name = re.sub('(<h4>|</h4>)','',p.name)
+                self.add_spanned_row( (p_name,), self.tablehead )
             else:
                 tr = TableRow( stylename = self.tablecontents )
                 self.table.addElement(tr)
-                p_price = ( p.name, ' %.0f %s'%(p.cell, p.valyuta.desc))
+                p_price = ( p.name, p_cell )
 
                 #self.add_cell( pl, tr, self.tablecontents, )#numbercolumnsspanned=2, numberrowsspanned = 1 )
                 tc = TableCell( stylename= self.tablecontents, numbercolumnsspanned=2, numberrowsspanned = 1 )
@@ -289,8 +294,48 @@ def generate_all_prices(manuf_flag = False):
     pass
 
 def generate_by_rules():
+    def __load_csv( path ):
+        import csv
+        c = csv.reader( open( path , 'r') )
+        return [l for l in c]
+
     root_dir = '/home/apkawa/work/2009/price/%s_%s'%( date,'by_rule' )
-    rule = 
+    file_rule = '/home/apkawa/work/rules.csv'
+    rules= __load_csv( file_rule )
+    __type = { '#D': lambda x, f: None,#os.mkdir( x ),
+                '#F': lambda d,f:None ,
+                '#FO': lambda d,f: '#F %s'% os.path.join(d,f),
+                '#FOC': lambda d,f: '#F %s'% os.path.join(d,f),
+            }
+    __type_keys = __type.keys()
+    for rl in rules:
+        flag = rl[0]
+        name = rl[1]
+        category_id = rl[2]
+        manufacturer_name = rl[3] if rl[3] else False
+        if flag in __type_keys:
+            if flag == '#D':
+                __dir = os.path.join( root_dir, rl[1] )
+                try:
+                    os.makedirs( __dir )
+                except OSError:
+                    pass
+                print '#D',__dir
+            elif flag in ('#F','#FO'):
+                print rl
+                __file = os.path.join( __dir,'%s%s'%(name,'(старое)' if flag == '#FO' else '' ))
+                t = Save_to_ods()
+                if category_id:
+                    t.connect_base( category_id, manufacturer_name )
+                    t.generate_ods( __file )
+                else:
+                    continue
+
+
+
+
+
+
 ##########################################################################################################
 
 if __name__ == '__main__':
@@ -308,7 +353,8 @@ if __name__ == '__main__':
         t.connect_base( argv[2] )
         t.read_stdout()
     elif argv[1] == '--by_rules':
-        pass
+        generate_by_rules()
+        
 
     pass
 

@@ -107,7 +107,7 @@ class Parse:
                 if re.match('http://',img_url_flag):
                     img_url = img_url_flag
                 elif img_url_flag:
-                    word =  manufac[0].name.encode('utf-8')+name
+                    word =  manufac.name.encode('utf-8')+name
                     img_url = self._find_in_google(word )
                 else:
                     img_url = None
