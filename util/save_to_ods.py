@@ -64,10 +64,10 @@ class Save_to_ods:
         self.tablecontents = Style(name="content", family="table-cell")
         self.tablecontents.addElement(
                 TableCellProperties(
-#                    borderbottom="none",
- #                   borderleft="none",
-  #                  borderright="0.002cm solid #000000",
-   #                 bordertop="none",
+                    #borderbottom="none",
+                    #borderleft="none",
+                    #borderright="0.002cm solid #000000",
+                    #bordertop="none",
                     border="0.002cm solid #000000",
                     wrapoption="wrap",
                     verticalalign="middle",
@@ -78,8 +78,8 @@ class Save_to_ods:
                     ) )
         self.doc.styles.addElement(self.tablecontents)
 
- #       self.tablecontents_m2cell = Style(name = "content_m2cell", family="table-cell", parentstylename="content" )
-#        self.tablecontents_m2cell.addElement( TableCellProperties( t
+         #self.tablecontents_m2cell = Style(name = "content_m2cell", family="table-cell", parentstylename="content" )
+         #self.tablecontents_m2cell.addElement( TableCellProperties( t
 
         self.tablemanuf = Style(name="manuf", family="table-cell", parentstylename="root_style")
         self.tablemanuf.addElement(
@@ -92,10 +92,9 @@ class Save_to_ods:
         self.tablemanuf.addElement(ParagraphProperties( textalign="center" ))
         self.tablemanuf.addElement( TextProperties(fontweight="bold", fontweightasian="bold"))
         self.doc.styles.addElement(self.tablemanuf)
-
-# Create automatic styles for the column widths.
-# We want two different widths, one in inches, the other one in metric.
-# ODF Standard section 15.9.1
+        # Create automatic styles for the column widths.
+        # We want two different widths, one in inches, the other one in metric.
+        # ODF Standard section 15.9.1
         widthname = Style(name="Wname", family="table-column")
         widthname.addElement(TableColumnProperties(columnwidth="5 cm"))
         self.doc.automaticstyles.addElement(widthname )
@@ -110,7 +109,7 @@ class Save_to_ods:
         widthcell.addElement(ParagraphProperties(numberlines="false", linenumber="0", textalign="end"))
         self.doc.automaticstyles.addElement(widthcell)
 
-# Start the table, and describe the columns
+        #>> Start the table, and describe the columns
         self.table = Table(name= tablename )
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthname))
         self.table.addElement(TableColumn(numbercolumnsrepeated=1,stylename=widthdesc))
@@ -199,6 +198,20 @@ class Save_to_ods:
 
         self.doc.spreadsheet.addElement( self.table )
         self.doc.save( path , True)
+    def read_stdout(self):
+        print 'name; desc;cell; img_url'
+        manuf = None
+        type_product = None
+        for p in self.price:
+            if manuf != p.manufacturer_id and p.manufacturer_id != 233:
+                manuf = p.manufacturer.id
+                print p.manufacturer.name
+
+            if type_product != p.type_product_id and p.type_product_id != 13:
+                type_product = p.type_product_id
+                print p.type_product.name
+            print '%s;%s;%s;%s;'%(p.name, p.desc,'%.0f %s'%(p.cell, p.valyuta.desc), p.img_url if p.img_url else '' )
+
 
     def connect_base(self, category_id = 202, manufac_name = False):
         self.base = []
@@ -209,7 +222,7 @@ class Save_to_ods:
                             '-manufacturer__pos','manufacturer', '-type_product__pos','type_product','id' )
         else:
             self.price = Price.objects.filter( category = self.category ).order_by( 'manufacturer__pos','manufacturer',
-                 '-type_product__pos','type_product','id' )
+                 'type_product__pos','type_product','id' )
 
         if not self.price.count():
             return False
@@ -225,7 +238,7 @@ def save_ods_to_xls(path):
 
 
 def generate_all_prices(manuf_flag = False):
-    root_dir = '/home/apkawa/work/2009/price/%s'%date
+    root_dir = '/home/apkawa/work/2009/price/%s_%s'%( date,'all' if not manuf_flag else 'all_by_manuf' )
     try:
         os.mkdir( root_dir )
     except:
@@ -275,18 +288,27 @@ def generate_all_prices(manuf_flag = False):
             #print a.name,';', a.slug, ';', a.id
     pass
 
+def generate_by_rules():
+    root_dir = '/home/apkawa/work/2009/price/%s_%s'%( date,'by_rule' )
+    rule = 
 ##########################################################################################################
 
 if __name__ == '__main__':
     from sys import argv
     if argv[1] in ('--all', '-a'):
         generate_all_prices()
-    if argv[1] in ('--all_m', '-am'):
+    elif argv[1] in ('--all_m', '-am'):
         generate_all_prices( True )
     elif argv[1] == '--id':
         t = Save_to_ods()
         t.connect_base( argv[2] )
         t.generate_ods()
+    elif argv[1] == '-r':
+        t = Save_to_ods()
+        t.connect_base( argv[2] )
+        t.read_stdout()
+    elif argv[1] == '--by_rules':
+        pass
 
     pass
 

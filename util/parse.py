@@ -62,12 +62,19 @@ class Parse:
             name = clear_space( l[0])
             if not name:
                 continue
+            elif name == '#D':
+                print '#D ',l[1]
+                category_id = l[1]
+                p = Price.objects.filter( category__id = category_id )
+                print p
+                p.delete()
+                continue
+
             desc = clear_space( l[1])
             match = '\$|€|руб\.|р\.|y\.e\.|У\.Е\.'
             v = ''.join(re.findall('(%s)'%match,l[2]))
             _valyuta = Valyuta.objects.filter( desc = v )
             if _valyuta:
-                print l
                 cell = float(re.sub(',','.', re.sub( '(%s|[\s]|\xc2\xa0)'%match ,'',l[2])))
                 l_3 = clear_space(l[3])
                 if l_3:
@@ -105,8 +112,8 @@ class Parse:
                 else:
                     img_url = None
                 print name, desc, cell, _valyuta, category, img_url
-                p = Price.objects.get_or_create(name = name, category = category,
-                        defaults={'desc': desc,
+                p = Price.objects.get_or_create(name = name, category = category, desc = desc,
+                        defaults={#'desc': desc,
                             'cell':cell,
                             'valyuta' : _valyuta[0],
                             'manufacturer': manufac,
