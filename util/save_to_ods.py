@@ -221,10 +221,14 @@ class Save_to_ods:
     def connect_base(self, category_id = 202, manufac_name = False):
         self.base = []
         self.category = Category.objects.get(id= category_id )
-        if manufac_name:
+        if manufac_name and type(manufac_name) == type([]):
+            self.price = Price.objects.filter(
+                    category = self.category, manufacturer__name__in = manufac_name ).order_by(
+                            'manufacturer__pos','manufacturer', 'type_product__pos','type_product','id' )
+        elif manufac_name:
             self.price = Price.objects.filter(
                     category = self.category, manufacturer__name = manufac_name ).order_by(
-                            '-manufacturer__pos','manufacturer', '-type_product__pos','type_product','id' )
+                            'manufacturer__pos','manufacturer', 'type_product__pos','type_product','id' )
         else:
             self.price = Price.objects.filter( category = self.category ).order_by( 'manufacturer__pos','manufacturer',
                  'type_product__pos','type_product','id' )
@@ -235,7 +239,7 @@ class Save_to_ods:
             return True
 
 def save_ods_to_xls(path):
-    ar =  'openoffice.org3.0 -invisible \"macro:///Standard.Module1.SaveAsXLS(%s.ods)\"'%path
+    ar =  '/opt/openoffice/program/soffice -invisible \"macro:///Standard.Module1.SaveAsXLS(%s.ods)\"'%path
     command = ar.encode('utf-8')
     os.popen( command )
     print "Save As XLS file: %s.ods"%path
@@ -310,9 +314,9 @@ def generate_by_rules():
     __type_keys = __type.keys()
     for rl in rules:
         flag = rl[0]
-        name = rl[1]
+        name = re.sub(',','',rl[1])
         category_id = rl[2]
-        manufacturer_name = rl[3] if rl[3] else False
+        manufacturer_name = rl[3].split(';') if rl[3] else False
         if flag in __type_keys:
             if flag == '#D':
                 __dir = os.path.join( root_dir, rl[1] )
@@ -324,10 +328,11 @@ def generate_by_rules():
             elif flag in ('#F','#FO'):
                 print rl
                 __file = os.path.join( __dir,'%s%s'%(name,'(старое)' if flag == '#FO' else '' ))
-                t = Save_to_ods()
+                __t = Save_to_ods()
                 if category_id:
-                    t.connect_base( category_id, manufacturer_name )
-                    t.generate_ods( __file )
+                    __t.connect_base( category_id, manufacturer_name )
+                    __t.generate_ods( __file )
+                    save_ods_to_xls( __file )
                 else:
                     continue
 
