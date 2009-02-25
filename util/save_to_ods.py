@@ -19,7 +19,8 @@ date = datetime.datetime.now().date().strftime('%F')
 
 import os
 import re
-
+import shutil
+import time
 class Save_to_ods:
     def __init__(self):
         pass
@@ -239,11 +240,20 @@ class Save_to_ods:
             return True
 
 def save_ods_to_xls(path):
-    ar =  '/opt/openoffice/program/soffice -invisible \"macro:///Standard.Module1.SaveAsXLS(%s.ods)\"'%path
-    command = ar.encode('utf-8')
+
+    temp = os.tempnam()
+    shutil.copyfile( '%s.ods'%path, '%s.ods'%temp )
+
+    ar =  '/opt/openoffice/program/soffice -invisible \"macro:///Standard.Module1.SaveAsXLS(%s.ods)\"'%temp
+    try:
+        command = ar.encode('utf-8')
+    except UnicodeDecodeError:
+        command = ar
     os.popen( command )
+    time.sleep(1)
+
     print "Save As XLS file: %s.ods"%path
-    pass
+    shutil.copyfile( '%s.xls'%temp,  '%s.xls'%path)
 
 
 def generate_all_prices(manuf_flag = False):

@@ -46,9 +46,8 @@ class Parse:
         self.test = test
         pass
     def _find_in_google(self, query):
-        query = query
+        query = ''.join( query.split('NULL') )
         return google(query)
-        pass
 
     def load_file( self, argv ):
         csv_f = argv[0]
@@ -104,11 +103,12 @@ class Parse:
                     img_url_flag = l[8]
                 except IndexError:
                     img_url_flag = None
-                if re.match('http://',img_url_flag):
-                    img_url = img_url_flag
-                elif img_url_flag:
-                    word =  manufac.name.encode('utf-8')+name
-                    img_url = self._find_in_google(word )
+                if img_url_flag:
+                    if re.match('http://',img_url_flag):
+                        img_url = img_url_flag
+                    else:
+                        word =  manufac.name.encode('utf-8')+name
+                        img_url = self._find_in_google(word )
                 else:
                     img_url = None
                 print name, desc, cell, _valyuta, category, img_url
