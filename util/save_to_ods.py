@@ -128,9 +128,6 @@ class Save_to_ods:
             p = P(text = _c )
             tc.addElement(p)
             tr.addElement( CoveredTableCell() )
-    
-
-
     def add_row( self, _tuple, stylename):
         tr = TableRow()
         self.table.addElement(tr)
@@ -139,15 +136,11 @@ class Save_to_ods:
             tr.addElement(tc)
             p = P(text = _c )
             tc.addElement(p)
-
     def add_cell( self, _cell, _table_row, stylename):
         tc = TableCell( stylename= stylename )
         _table_row.addElement(tc)
         p = P(text = _cell )
         tc.addElement(p)
-
-
-
     def generate_ods(self, path="/home/apkawa/work/test_desu"):
         self.make_style( tablename = self.category.name )
 
@@ -205,20 +198,29 @@ class Save_to_ods:
         self.doc.spreadsheet.addElement( self.table )
         self.doc.save( path , True)
     def read_stdout(self):
-        print 'name; desc;cell; img_url'
+        print 'name; desc;cell; manuf;pos;type_product;pos;category_id; img_url'
         manuf = None
         type_product = None
         for p in self.price:
             if manuf != p.manufacturer_id and p.manufacturer_id != 233:
                 manuf = p.manufacturer.id
-                print p.manufacturer.name
+                print '"%s";"%s";\n'%(p.manufacturer.name,p.manufacturer.pos if p.manufacturer.pos else '')
 
             if type_product != p.type_product_id and p.type_product_id != 13:
                 type_product = p.type_product_id
-                print p.type_product.name
-            print '%s;%s;%s;%s;'%(p.name, p.desc,'%.0f %s'%(p.cell, p.valyuta.desc), p.img_url if p.img_url else '' )
-
-
+                print '"%s";"%s";\n'%(p.type_product.name, p.type_product.pos if p.type_product.pos else '' )
+            # 0          1       2        3      4     5             6     7          8
+            #name_pr	desc	cell	manuf	pos	type_product	pos	category_id	img_flag
+ 
+            print '"%s";"%s";"%s";"%s";"%s";"%s";"%s";"%s";"%s";'%(p.name,
+                    p.desc if p.desc else '',
+                    '%.0f %s'%(p.cell, p.valyuta.desc),
+                    p.manufacturer.name,
+                    p.manufacturer.pos,
+                    p.type_product.name,
+                    p.type_product.pos,
+                    p.category_id,
+                    p.img_url if p.img_url else '') 
     def connect_base(self, category_id = 202, manufac_name = False):
         self.base = []
         self.category = Category.objects.get(id= category_id )

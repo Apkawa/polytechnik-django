@@ -107,12 +107,13 @@ class Parse:
                     if re.match('http://',img_url_flag):
                         img_url = img_url_flag
                     else:
-                        word =  manufac.name.encode('utf-8')+name
+                        #word =  manufac.name.encode('utf-8')+name
+                        word =name
                         img_url = self._find_in_google(word )
                 else:
                     img_url = None
                 print name, desc, cell, _valyuta, category, img_url
-                p = Price.objects.get_or_create(name = name, category = category, desc = desc,
+                p, created = Price.objects.get_or_create(name = name, category = category, desc = desc,
                         defaults={#'desc': desc,
                             'cell':cell,
                             'valyuta' : _valyuta[0],
@@ -121,7 +122,23 @@ class Parse:
                             'img_url':img_url,
                             'postavshik': postavshik,
                             })
-                print p
+                if created:
+                    print 'Insert OK. %s'%p.name
+                if not created:
+                    __save = False
+                    if p.cell != cell:
+                        p.cell= cell
+                        __save = True
+                    if p.img_url != img_url:
+                        p.img_url = img_url
+                        __save = True
+                    if __save:
+                        print 'Update OK. %s'%p.name
+                        p.save()
+
+                    
+                    
+
             else:
                 continue
     def insert_db(self):
