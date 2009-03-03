@@ -141,7 +141,7 @@ class Save_to_ods:
         _table_row.addElement(tc)
         p = P(text = _cell )
         tc.addElement(p)
-    def generate_ods(self, path="/home/apkawa/work/test_desu"):
+    def generate_ods(self, path="/home/apkawa/work/test_desu", group=False):
         self.make_style( tablename = self.category.name )
 
         self.add_spanned_row( (u'OOO "Политехник"',), self.head )

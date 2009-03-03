@@ -107,8 +107,8 @@ class Parse:
                     if re.match('http://',img_url_flag):
                         img_url = img_url_flag
                     else:
-                        #word =  manufac.name.encode('utf-8')+name
-                        word =name
+                        word =  manufac.name.encode('utf-8')+name
+                        #word =name
                         img_url = self._find_in_google(word )
                 else:
                     img_url = None
@@ -131,6 +131,9 @@ class Parse:
                         __save = True
                     if p.img_url != img_url:
                         p.img_url = img_url
+                        __save = True
+                    if p.type_product != type_product:
+                        p.type_product = type_product
                         __save = True
                     if __save:
                         print 'Update OK. %s'%p.name
